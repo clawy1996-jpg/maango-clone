@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
-    const { url } = await req.json();
+    const { url, forceRescan } = await req.json();
     if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 });
 
     const targetUrl = url.startsWith('http') ? url : `https://${url}`;
@@ -11,6 +12,33 @@ export async function POST(req: Request) {
       domain = new URL(targetUrl).origin;
     } catch {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+    }
+
+    const db = await getDb();
+
+    // Check cache first
+    if (!forceRescan) {
+      const cached = await db.get('SELECT * FROM scans WHERE domain = ?', [domain]);
+      if (cached) {
+        return NextResponse.json({
+          domain: cached.domain,
+          isProtected: !!cached.isProtected,
+          cached: true,
+          timestamp: cached.timestamp,
+          details: {
+            robotsTxt: cached.robotsTxt,
+            xRobotsTag: cached.xRobotsTag,
+            metaTags: cached.metaTags,
+            aiTxt: cached.aiTxt
+          },
+          suggestions: generateSuggestions(
+            cached.robotsTxt === 'Protected',
+            cached.xRobotsTag === 'Protected',
+            cached.metaTags === 'Protected',
+            cached.aiTxt === 'Protected'
+          )
+        });
+      }
     }
 
     const headers = { 'User-Agent': 'MaangoCloneBot/1.0' };
@@ -36,60 +64,76 @@ export async function POST(req: Request) {
 
     const isProtected = hasRobotsBlocking || hasHeaderBlocking || hasMetaBlocking || hasAiTxt;
 
-    // Generate suggestions based on missing protections
-    const suggestions = [];
-    
-    if (!hasRobotsBlocking) {
-      suggestions.push({
-        title: "Update robots.txt",
-        description: "Your robots.txt file is missing or does not block common AI crawlers. Add explicit Disallow directives for User-Agents like GPTBot, ClaudeBot, and CCBot.",
-        code: `User-agent: GPTBot\nDisallow: /\n\nUser-agent: ClaudeBot\nDisallow: /\n\nUser-agent: CCBot\nDisallow: /`
-      });
-    }
+    const details = {
+      robotsTxt: hasRobotsBlocking ? 'Protected' : 'Unprotected',
+      xRobotsTag: hasHeaderBlocking ? 'Protected' : 'Unprotected',
+      metaTags: hasMetaBlocking ? 'Protected' : 'Unprotected',
+      aiTxt: hasAiTxt ? 'Protected' : 'Unprotected'
+    };
 
-    if (!hasMetaBlocking && !hasHeaderBlocking) {
-      suggestions.push({
-        title: "Add HTML Meta Tags",
-        description: "Add a robots meta tag to your site's <head> to instruct web crawlers not to use your content for AI training.",
-        code: `<meta name="robots" content="noai, noimageai">`
-      });
-      
-      suggestions.push({
-        title: "Configure HTTP Headers",
-        description: "For files like PDFs or images that don't have HTML <head> sections, configure your web server to return an X-Robots-Tag header.",
-        code: `X-Robots-Tag: noai, noindex`
-      });
-    }
+    // Save to DB
+    await db.run(
+      `INSERT OR REPLACE INTO scans (domain, isProtected, robotsTxt, xRobotsTag, metaTags, aiTxt, timestamp) 
+       VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      [domain, isProtected ? 1 : 0, details.robotsTxt, details.xRobotsTag, details.metaTags, details.aiTxt]
+    );
 
-    if (!hasAiTxt) {
-      suggestions.push({
-        title: "Implement ai.txt",
-        description: "The ai.txt standard is a newer, dedicated way to express AI data mining policies. Create a /.well-known/ai.txt file.",
-        code: `User-Agent: *\nDisallow: /`
-      });
-    }
-
-    if (isProtected && suggestions.length === 0) {
-      suggestions.push({
-        title: "You are fully protected",
-        description: "Excellent work. You have implemented multiple layers of defense against AI scraping.",
-        code: null
-      });
-    }
+    // Fetch the inserted record to get the exact generated timestamp
+    const saved = await db.get('SELECT timestamp FROM scans WHERE domain = ?', [domain]);
 
     return NextResponse.json({
       domain,
       isProtected,
-      details: {
-        robotsTxt: hasRobotsBlocking ? 'Protected' : 'Unprotected',
-        xRobotsTag: hasHeaderBlocking ? 'Protected' : 'Unprotected',
-        metaTags: hasMetaBlocking ? 'Protected' : 'Unprotected',
-        aiTxt: hasAiTxt ? 'Protected' : 'Unprotected'
-      },
-      suggestions
+      cached: false,
+      timestamp: saved.timestamp,
+      details,
+      suggestions: generateSuggestions(hasRobotsBlocking, hasHeaderBlocking, hasMetaBlocking, hasAiTxt)
     });
 
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
+}
+
+function generateSuggestions(hasRobots: boolean, hasHeader: boolean, hasMeta: boolean, hasAiTxt: boolean) {
+  const suggestions = [];
+  
+  if (!hasRobots) {
+    suggestions.push({
+      title: "Update robots.txt",
+      description: "Your robots.txt file is missing or does not block common AI crawlers. Add explicit Disallow directives for User-Agents like GPTBot, ClaudeBot, and CCBot.",
+      code: \`User-agent: GPTBot\\nDisallow: /\\n\\nUser-agent: ClaudeBot\\nDisallow: /\\n\\nUser-agent: CCBot\\nDisallow: /\`
+    });
+  }
+
+  if (!hasMeta && !hasHeader) {
+    suggestions.push({
+      title: "Add HTML Meta Tags",
+      description: "Add a robots meta tag to your site's <head> to instruct web crawlers not to use your content for AI training.",
+      code: \`<meta name="robots" content="noai, noimageai">\`
+    });
+    
+    suggestions.push({
+      title: "Configure HTTP Headers",
+      description: "For files like PDFs or images that don't have HTML <head> sections, configure your web server to return an X-Robots-Tag header.",
+      code: \`X-Robots-Tag: noai, noindex\`
+    });
+  }
+
+  if (!hasAiTxt) {
+    suggestions.push({
+      title: "Implement ai.txt",
+      description: "The ai.txt standard is a newer, dedicated way to express AI data mining policies. Create a /.well-known/ai.txt file.",
+      code: \`User-Agent: *\\nDisallow: /\`
+    });
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push({
+      title: "You are fully protected",
+      description: "Excellent work. You have implemented multiple layers of defense against AI scraping.",
+      code: null
+    });
+  }
+  return suggestions;
 }

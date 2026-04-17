@@ -8,16 +8,16 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const handleScan = async (e?: React.FormEvent) => {
+  const handleScan = async (e?: React.FormEvent, forceRescan: boolean = false) => {
     e?.preventDefault();
     if (!url) return;
     setLoading(true);
-    setResult(null);
+    if (!forceRescan) setResult(null);
     try {
       const res = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url, forceRescan })
       });
       const data = await res.json();
       setResult(data);
@@ -97,11 +97,28 @@ export default function Home() {
         {/* Results Container */}
         {result && (
           <div className="w-full max-w-3xl bg-white p-8 rounded-3xl shadow-xl border border-gray-100 mb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-3xl font-extrabold text-black">{result.domain}</h3>
-              <div className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold tracking-wide uppercase ${result.isProtected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                {result.isProtected ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-                {result.isProtected ? "Protected" : "Unprotected"}
+            {/* Status Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+              <div>
+                <h3 className="text-3xl font-extrabold text-black mb-2">{result.domain}</h3>
+                {result.timestamp && (
+                  <p className="text-sm text-gray-500 font-medium">
+                    {result.cached ? 'Loaded from cache' : 'Scanned just now'} &middot; {new Date(result.timestamp + 'Z').toLocaleString()}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => handleScan(undefined, true)}
+                  disabled={loading}
+                  className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Scan Again
+                </button>
+                <div className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold tracking-wide uppercase ${result.isProtected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {result.isProtected ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                  {result.isProtected ? "Protected" : "Unprotected"}
+                </div>
               </div>
             </div>
             
