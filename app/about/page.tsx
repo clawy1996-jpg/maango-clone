@@ -1,30 +1,84 @@
-import Link from "next/link";
-
 export default function About() {
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-[#1A1A1A] font-sans flex flex-col">
-      <nav className="sticky top-0 z-50 bg-[#FDFDFD]/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative w-8 h-8 flex-shrink-0 group-hover:rotate-12 transition-transform duration-300">
-              <div className="w-full h-full bg-[#FACC15] rounded-xl flex items-center justify-center text-black font-bold shadow-sm">M</div>
-            </div>
-            <span className="font-bold text-[22px] tracking-tight">Maango</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-2">
-            <Link href="/about" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-black bg-gray-100">About</Link>
-            <Link href="/report" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50 flex items-center gap-1.5">
-              Report <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FEF08A] text-[#854D0E] uppercase tracking-wide">New</span>
-            </Link>
-            <Link href="/blog" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50">Blog</Link>
-            <Link href="/docs" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50">For Developers</Link>
-          </div>
+    <main className="max-w-4xl mx-auto pt-24 px-6 pb-24">
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-bold uppercase tracking-wider mb-8">
+        New Research - Feb 2026
+      </div>
+      
+      <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-black mb-8 leading-tight">
+        The permissions layer for the agentic web
+      </h1>
+      
+      <p className="text-xl text-gray-500 leading-relaxed mb-12">
+        8 competing AI policy standards. No interoperability. 90% of websites say nothing at all. 
+        Maango is building the canonical registry for AI permissions — so agents know what's allowed, 
+        and websites control what's permitted.
+      </p>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-24 border-y border-gray-100 py-12">
+        <div>
+          <div className="text-3xl font-bold text-black mb-1">999,316</div>
+          <div className="text-sm text-gray-400 font-medium uppercase">Domains Analyzed</div>
         </div>
-      </nav>
-      <main className="flex-grow flex flex-col items-center justify-center pt-24 px-4 text-center pb-24">
-        <h1 className="text-5xl font-extrabold tracking-tight text-black mb-6">About Maango</h1>
-        <p className="text-xl text-gray-500 max-w-2xl">Building the trust layer for the agentic web. One registry, every AI policy, any domain.</p>
-      </main>
-    </div>
+        <div>
+          <div className="text-3xl font-bold text-black mb-1">90.1%</div>
+          <div className="text-sm text-gray-400 font-medium uppercase">No AI Policy</div>
+        </div>
+        <div>
+          <div className="text-3xl font-bold text-black mb-1">8</div>
+          <div className="text-sm text-gray-400 font-medium uppercase">Standards Parsed</div>
+        </div>
+        <div>
+          <div className="text-3xl font-bold text-black mb-1">Feb 2026</div>
+          <div className="text-sm text-gray-400 font-medium uppercase">Last Research</div>
+        </div>
+      </div>
+
+      <div className="space-y-24">
+        <section>
+          <h2 className="text-sm font-bold tracking-widest text-gray-400 uppercase mb-4">Built for you</h2>
+          <h3 className="text-4xl font-extrabold text-black mb-12">What brings you here?</h3>
+          
+          <div className="grid md:grid-cols-2 gap-12">
+            <div>
+              <h4 className="text-2xl font-bold mb-6">Ship compliant agents</h4>
+              <ul className="space-y-8">
+                <li>
+                  <h5 className="font-bold text-lg mb-2">Compliance on autopilot</h5>
+                  <p className="text-gray-500">One API call returns structured permissions for any domain - training, search, and inference. No parsing. No guessing.</p>
+                </li>
+                <li>
+                  <h5 className="font-bold text-lg mb-2">Audit trails built in</h5>
+                  <p className="text-gray-500">Every policy check is logged with timestamps. When regulators or publishers ask, you have receipts.</p>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-2xl font-bold mb-6">Protect your website</h4>
+              <ul className="space-y-8">
+                <li>
+                  <h5 className="font-bold text-lg mb-2">Understand what AI sees</h5>
+                  <p className="text-gray-500">Discover what signals your site sends - or doesn't - to AI crawlers across 8 different standards.</p>
+                </li>
+                <li>
+                  <h5 className="font-bold text-lg mb-2">Declare your policy once</h5>
+                  <p className="text-gray-500">Set your AI permissions through Maango and every agent that checks the registry respects them.</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-gray-50 rounded-[3rem] p-12 md:p-16">
+          <h2 className="text-3xl font-extrabold text-black mb-6">From aggregator to authority</h2>
+          <p className="text-lg text-gray-600 leading-relaxed mb-6">
+            Today, Maango reads every AI policy standard because no single one is authoritative. robots.txt wasn't built for AI. llms.txt is optional. ai.txt only covers Cloudflare's 20%. The web has 8 competing formats and no source of truth.
+          </p>
+          <p className="text-lg text-gray-600 leading-relaxed">
+            That's the gap we're closing. As website owners claim their domains and declare policies directly through Maango, the registry becomes the canonical layer — not a scraper of fragments, but the place where AI permissions live.
+          </p>
+        </section>
+      </div>
+    </main>
   );
 }
