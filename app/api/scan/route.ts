@@ -36,6 +36,47 @@ export async function POST(req: Request) {
 
     const isProtected = hasRobotsBlocking || hasHeaderBlocking || hasMetaBlocking || hasAiTxt;
 
+    // Generate suggestions based on missing protections
+    const suggestions = [];
+    
+    if (!hasRobotsBlocking) {
+      suggestions.push({
+        title: "Update robots.txt",
+        description: "Your robots.txt file is missing or does not block common AI crawlers. Add explicit Disallow directives for User-Agents like GPTBot, ClaudeBot, and CCBot.",
+        code: `User-agent: GPTBot\nDisallow: /\n\nUser-agent: ClaudeBot\nDisallow: /\n\nUser-agent: CCBot\nDisallow: /`
+      });
+    }
+
+    if (!hasMetaBlocking && !hasHeaderBlocking) {
+      suggestions.push({
+        title: "Add HTML Meta Tags",
+        description: "Add a robots meta tag to your site's <head> to instruct web crawlers not to use your content for AI training.",
+        code: `<meta name="robots" content="noai, noimageai">`
+      });
+      
+      suggestions.push({
+        title: "Configure HTTP Headers",
+        description: "For files like PDFs or images that don't have HTML <head> sections, configure your web server to return an X-Robots-Tag header.",
+        code: `X-Robots-Tag: noai, noindex`
+      });
+    }
+
+    if (!hasAiTxt) {
+      suggestions.push({
+        title: "Implement ai.txt",
+        description: "The ai.txt standard is a newer, dedicated way to express AI data mining policies. Create a /.well-known/ai.txt file.",
+        code: `User-Agent: *\nDisallow: /`
+      });
+    }
+
+    if (isProtected && suggestions.length === 0) {
+      suggestions.push({
+        title: "You are fully protected",
+        description: "Excellent work. You have implemented multiple layers of defense against AI scraping.",
+        code: null
+      });
+    }
+
     return NextResponse.json({
       domain,
       isProtected,
@@ -44,7 +85,8 @@ export async function POST(req: Request) {
         xRobotsTag: hasHeaderBlocking ? 'Protected' : 'Unprotected',
         metaTags: hasMetaBlocking ? 'Protected' : 'Unprotected',
         aiTxt: hasAiTxt ? 'Protected' : 'Unprotected'
-      }
+      },
+      suggestions
     });
 
   } catch (err: any) {
