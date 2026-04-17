@@ -1,28 +1,21 @@
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
-import path from 'path';
+import { sql } from '@vercel/postgres';
 
-let db: any = null;
-
-export async function getDb() {
-  if (db) return db;
-  
-  db = await open({
-    filename: path.join(process.cwd(), 'scans.db'),
-    driver: sqlite3.Database
-  });
-
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS scans (
-      domain TEXT PRIMARY KEY,
-      isProtected INTEGER,
-      robotsTxt TEXT,
-      xRobotsTag TEXT,
-      metaTags TEXT,
-      aiTxt TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  return db;
+export async function createTable() {
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS scans (
+        domain VARCHAR(255) PRIMARY KEY,
+        isProtected BOOLEAN,
+        robotsTxt VARCHAR(50),
+        xRobotsTag VARCHAR(50),
+        metaTags VARCHAR(50),
+        aiTxt VARCHAR(50),
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    return true;
+  } catch (error) {
+    console.error('Failed to create table:', error);
+    return false;
+  }
 }

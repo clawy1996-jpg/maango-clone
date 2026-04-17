@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { sql } from '@vercel/postgres';
+import { createTable } from '@/lib/db';
+
+// Ensure table exists on first run
+let tableCreated = false;
 
 export async function POST(req: Request) {
   try {
+    if (!tableCreated) {
+      await createTable();
+      tableCreated = true;
+    }
+
     const { url, forceRescan } = await req.json();
     if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 });
 
@@ -14,28 +23,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
 
-    const db = await getDb();
-
     // Check cache first
     if (!forceRescan) {
-      const cached = await db.get('SELECT * FROM scans WHERE domain = ?', [domain]);
+      const { rows } = await sql`SELECT * FROM scans WHERE domain = ${domain} LIMIT 1`;
+      const cached = rows[0];
+      
       if (cached) {
         return NextResponse.json({
           domain: cached.domain,
-          isProtected: !!cached.isProtected,
+          isProtected: cached.isprotected,
           cached: true,
           timestamp: cached.timestamp,
           details: {
-            robotsTxt: cached.robotsTxt,
-            xRobotsTag: cached.xRobotsTag,
-            metaTags: cached.metaTags,
-            aiTxt: cached.aiTxt
+            robotsTxt: cached.robotstxt,
+            xRobotsTag: cached.xrobotstag,
+            metaTags: cached.metatags,
+            aiTxt: cached.aitxt
           },
           suggestions: generateSuggestions(
-            cached.robotsTxt === 'Protected',
-            cached.xRobotsTag === 'Protected',
-            cached.metaTags === 'Protected',
-            cached.aiTxt === 'Protected'
+            cached.robotstxt === 'Protected',
+            cached.xrobotstag === 'Protected',
+            cached.metatags === 'Protected',
+            cached.aitxt === 'Protected'
           )
         });
       }
@@ -71,21 +80,28 @@ export async function POST(req: Request) {
       aiTxt: hasAiTxt ? 'Protected' : 'Unprotected'
     };
 
-    // Save to DB
-    await db.run(
-      `INSERT OR REPLACE INTO scans (domain, isProtected, robotsTxt, xRobotsTag, metaTags, aiTxt, timestamp) 
-       VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      [domain, isProtected ? 1 : 0, details.robotsTxt, details.xRobotsTag, details.metaTags, details.aiTxt]
-    );
+    // Save to DB (Upsert)
+    await sql`
+      INSERT INTO scans (domain, isProtected, robotsTxt, xRobotsTag, metaTags, aiTxt, timestamp) 
+      VALUES (${domain}, ${isProtected}, ${details.robotsTxt}, ${details.xRobotsTag}, ${details.metaTags}, ${details.aiTxt}, CURRENT_TIMESTAMP)
+      ON CONFLICT (domain) DO UPDATE SET 
+        isProtected = EXCLUDED.isProtected,
+        robotsTxt = EXCLUDED.robotsTxt,
+        xRobotsTag = EXCLUDED.xRobotsTag,
+        metaTags = EXCLUDED.metaTags,
+        aiTxt = EXCLUDED.aiTxt,
+        timestamp = CURRENT_TIMESTAMP;
+    `;
 
-    // Fetch the inserted record to get the exact generated timestamp
-    const saved = await db.get('SELECT timestamp FROM scans WHERE domain = ?', [domain]);
+    // Fetch the exact timestamp
+    const { rows } = await sql`SELECT timestamp FROM scans WHERE domain = ${domain} LIMIT 1`;
+    const savedTimestamp = rows[0]?.timestamp || new Date().toISOString();
 
     return NextResponse.json({
       domain,
       isProtected,
       cached: false,
-      timestamp: saved.timestamp,
+      timestamp: savedTimestamp,
       details,
       suggestions: generateSuggestions(hasRobotsBlocking, hasHeaderBlocking, hasMetaBlocking, hasAiTxt)
     });
