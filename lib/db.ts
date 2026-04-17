@@ -1,21 +1,13 @@
-import { sql } from '@vercel/postgres';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function createTable() {
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS scans (
-        domain VARCHAR(255) PRIMARY KEY,
-        isProtected BOOLEAN,
-        robotsTxt VARCHAR(50),
-        xRobotsTag VARCHAR(50),
-        metaTags VARCHAR(50),
-        aiTxt VARCHAR(50),
-        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `;
-    return true;
-  } catch (error) {
-    console.error('Failed to create table:', error);
-    return false;
-  }
+  // In Supabase, we don't need to manually create tables via raw SQL if we use the API,
+  // but if the table 'scans' doesn't exist yet, we'll need to create it manually in the Supabase dashboard
+  // or use the SQL editor. For this integration, we'll assume the table exists or fail gracefully.
+  return true;
 }

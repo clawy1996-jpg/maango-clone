@@ -1,17 +1,8 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
-import { createTable } from '@/lib/db';
-
-// Ensure table exists on first run
-let tableCreated = false;
+import { supabase } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
-    if (!tableCreated) {
-      await createTable();
-      tableCreated = true;
-    }
-
     const { url, forceRescan } = await req.json();
     if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 });
 
@@ -25,10 +16,13 @@ export async function POST(req: Request) {
 
     // Check cache first
     if (!forceRescan) {
-      const { rows } = await sql`SELECT * FROM scans WHERE domain = ${domain} LIMIT 1`;
-      const cached = rows[0];
+      const { data: cached, error } = await supabase
+        .from('scans')
+        .select('*')
+        .eq('domain', domain)
+        .single();
       
-      if (cached) {
+      if (cached && !error) {
         return NextResponse.json({
           domain: cached.domain,
           isProtected: cached.isprotected,
@@ -80,22 +74,26 @@ export async function POST(req: Request) {
       aiTxt: hasAiTxt ? 'Protected' : 'Unprotected'
     };
 
-    // Save to DB (Upsert)
-    await sql`
-      INSERT INTO scans (domain, isProtected, robotsTxt, xRobotsTag, metaTags, aiTxt, timestamp) 
-      VALUES (${domain}, ${isProtected}, ${details.robotsTxt}, ${details.xRobotsTag}, ${details.metaTags}, ${details.aiTxt}, CURRENT_TIMESTAMP)
-      ON CONFLICT (domain) DO UPDATE SET 
-        isProtected = EXCLUDED.isProtected,
-        robotsTxt = EXCLUDED.robotsTxt,
-        xRobotsTag = EXCLUDED.xRobotsTag,
-        metaTags = EXCLUDED.metaTags,
-        aiTxt = EXCLUDED.aiTxt,
-        timestamp = CURRENT_TIMESTAMP;
-    `;
+    // Save to DB (Upsert via Supabase API)
+    const { data: savedRow, error: upsertError } = await supabase
+      .from('scans')
+      .upsert({
+        domain,
+        isprotected: isProtected,
+        robotstxt: details.robotsTxt,
+        xrobotstag: details.xRobotsTag,
+        metatags: details.metaTags,
+        aitxt: details.aiTxt,
+        timestamp: new Date().toISOString()
+      }, { onConflict: 'domain' })
+      .select()
+      .single();
 
-    // Fetch the exact timestamp
-    const { rows } = await sql`SELECT timestamp FROM scans WHERE domain = ${domain} LIMIT 1`;
-    const savedTimestamp = rows[0]?.timestamp || new Date().toISOString();
+    if (upsertError) {
+      console.error("Supabase UPSERT Error:", upsertError);
+    }
+
+    const savedTimestamp = savedRow?.timestamp || new Date().toISOString();
 
     return NextResponse.json({
       domain,
