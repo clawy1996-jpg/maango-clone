@@ -39,12 +39,12 @@ export default function Home() {
             <span className="font-bold text-[22px] tracking-tight">Maango</span>
           </Link>
           <div className="hidden md:flex items-center gap-2">
-            <Link href="#" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50">About</Link>
-            <Link href="#" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50 flex items-center gap-1.5">
+            <Link href="/about" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50">About</Link>
+            <Link href="/report" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50 flex items-center gap-1.5">
               Report <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FEF08A] text-[#854D0E] uppercase tracking-wide">New</span>
             </Link>
-            <Link href="#" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50">Blog</Link>
-            <Link href="#" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50">For Developers</Link>
+            <Link href="/blog" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50">Blog</Link>
+            <Link href="/docs" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors text-gray-500 hover:text-black hover:bg-gray-50">For Developers</Link>
           </div>
         </div>
       </nav>
@@ -233,16 +233,16 @@ export default function Home() {
             <div>
               <h4 className="text-sm font-bold text-black uppercase tracking-wider mb-6">Product</h4>
               <ul className="space-y-4 text-gray-500 font-medium">
-                <li><Link href="#" className="hover:text-black transition-colors flex items-center gap-2">Report <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#FEF08A] text-[#854D0E] uppercase">New</span></Link></li>
-                <li><Link href="#" className="hover:text-black transition-colors">Blog</Link></li>
-                <li><Link href="#" className="hover:text-black transition-colors">For Developers</Link></li>
+                <li><Link href="/report" className="hover:text-black transition-colors flex items-center gap-2">Report <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#FEF08A] text-[#854D0E] uppercase">New</span></Link></li>
+                <li><Link href="/blog" className="hover:text-black transition-colors">Blog</Link></li>
+                <li><Link href="/docs" className="hover:text-black transition-colors">For Developers</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-sm font-bold text-black uppercase tracking-wider mb-6">Legal</h4>
               <ul className="space-y-4 text-gray-500 font-medium">
-                <li><Link href="#" className="hover:text-black transition-colors">Privacy</Link></li>
-                <li><Link href="#" className="hover:text-black transition-colors">Terms</Link></li>
+                <li><Link href="/privacy" className="hover:text-black transition-colors">Privacy</Link></li>
+                <li><Link href="/terms" className="hover:text-black transition-colors">Terms</Link></li>
               </ul>
             </div>
           </div>
